@@ -1,0 +1,196 @@
+name: Dual-zone ceiling light
+products:
+  - id: maxit67l9kzvshnl
+    manufacturer: CLOUDY BAY
+    model: LFMC815SMWH
+# DP51: six big-endian 16-bit fields (zone, H, S, V, white level, CCT).
+# Observed zone words: 4 = off, 5 = center, 6 = ring, 7 = both.
+# Scene constraints below are retained from the device-tested configuration.
+# They do not force a mode change in the captured local traffic.
+entities:
+  - entity: switch
+    name: Master power
+    category: config
+    dps:
+      - id: 20
+        type: boolean
+        name: switch
+  - entity: light
+    name: Center
+    dps:
+      - id: 20
+        type: boolean
+        name: power
+      - id: 21
+        type: string
+        name: work_mode
+        optional: true
+      - id: 51
+        type: base64
+        name: switch
+        optional: true
+        force: true
+        mask: "000100000000000000000000"
+        mapping:
+          - dps_val: null
+            value_mirror: power
+      - id: 22
+        type: integer
+        name: std_brightness
+        optional: true
+        range:
+          min: 10
+          max: 1000
+      - id: 51
+        type: base64
+        name: brightness
+        optional: true
+        mask: "0000000000000000FFFF0000"
+        range:
+          min: 10
+          max: 1000
+        mapping:
+          - dps_val: null
+            value_mirror: std_brightness
+          - constraint: work_mode
+            conditions:
+              - dps_val: scene
+      - id: 23
+        type: integer
+        name: std_color_temp
+        optional: true
+        range:
+          min: 0
+          max: 1000
+        mapping:
+          - target_range:
+              min: 2700
+              max: 6500
+      - id: 51
+        type: base64
+        name: color_temp
+        optional: true
+        mask: "00000000000000000000FFFF"
+        range:
+          min: 0
+          max: 1000
+        mapping:
+          - dps_val: null
+            value_mirror: std_color_temp
+          - constraint: work_mode
+            target_range:
+              min: 2700
+              max: 6500
+            conditions:
+              - dps_val: scene
+  - entity: light
+    name: Ring
+    dps:
+      - id: 21
+        type: string
+        name: work_mode
+        optional: true
+      - id: 51
+        type: base64
+        name: switch
+        optional: true
+        mask: "000200000000000000000000"
+        mapping:
+          - dps_val: null
+            value: false
+      - id: 24
+        type: hex
+        name: std_rgbhsv
+        optional: true
+        format:
+          - name: h
+            bytes: 2
+            range:
+              min: 0
+              max: 360
+          - name: s
+            bytes: 2
+            range:
+              min: 0
+              max: 1000
+          - name: v
+            bytes: 2
+            range:
+              min: 0
+              max: 1000
+      - id: 51
+        type: base64
+        name: rgbhsv
+        optional: true
+        format:
+          - name: sw
+            bytes: 2
+          - name: h
+            bytes: 2
+            range:
+              min: 0
+              max: 360
+          - name: s
+            bytes: 2
+            range:
+              min: 0
+              max: 1000
+          - name: v
+            bytes: 2
+            range:
+              min: 10
+              max: 1000
+          - name: wb
+            bytes: 2
+          - name: wc
+            bytes: 2
+        mapping:
+          - constraint: work_mode
+            conditions:
+              - dps_val: scene
+  - entity: select
+    name: Operating mode
+    category: config
+    dps:
+      - id: 21
+        type: string
+        name: option
+        mapping:
+          - dps_val: white
+            value: "White"
+          - dps_val: colour
+            value: "Colour"
+          - dps_val: scene
+            value: "Combined scene"
+          - dps_val: music
+            value: "Music"
+  - entity: time
+    name: Timer
+    translation_key: timer
+    category: config
+    dps:
+      - id: 26
+        type: integer
+        name: second
+        optional: true
+        range:
+          min: 0
+          max: 86400
+  - entity: switch
+    name: Do not disturb
+    translation_key: do_not_disturb
+    category: config
+    dps:
+      - id: 34
+        type: boolean
+        name: switch
+        optional: true
+  - entity: text
+    name: Raw combined scene
+    category: config
+    hidden: true
+    dps:
+      - id: 51
+        type: base64
+        name: value
+        optional: true
